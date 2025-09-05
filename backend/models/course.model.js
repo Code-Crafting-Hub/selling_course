@@ -14,11 +14,17 @@ const courseSchema = new mongoose.Schema({
     required: true,
   },
   image: {
-    type: String,
-    reqiured: true,
+    public_id: {
+      type: String,
+      required: true,
+    },
+    url: {
+      type: String,
+      required: true,
+    },
   },
 });
 
-const courseModel = mongoose.model('Course',courseSchema)
+const courseModel = mongoose.model("Course", courseSchema);
 
-module.exports = courseModel
+module.exports = courseModel;
