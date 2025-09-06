@@ -10,7 +10,7 @@ const adminMiddleware=(req,res,next)=>{
         }
         const token = authHeader.split(" ")[1];
         const decoded = jwt.verify(token, jwtAdminPassword)
-        req.userId = decoded._id
+        req.adminId = decoded._id
         next();
     } catch (error) {
         console.log("Error in user authorization",error)
