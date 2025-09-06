@@ -1,11 +1,9 @@
-const userModel = require("../models/user.model");
-const bcrypt = require("bcrypt");
-const z = require("zod");
-require("dotenv").config();
-const jwt = require("jsonwebtoken");
-const { jwtUserPassword } = require("../config");
-const purchaseModel = require("../models/purchase.model");
-const courseModel = require("../models/course.model");
+const adminModel = require("../models/admin.model");
+require('dotenv').config()
+const z = require('zod')
+const jwt = require('jsonwebtoken')
+const bcrypt = require('bcrypt');
+const { jwtAdminPassword } = require("../config");
 
 const signup = async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
@@ -13,7 +11,7 @@ const signup = async (req, res) => {
     if (!firstName || !lastName || !email || !password) {
       return res.json({ errors: "All fields are required" });
     }
-    const userSchema = z.object({
+    const adminSchema = z.object({
       firstName: z.string().min(1),
       lastName: z.string().min(1),
       email: z.string().email(),
@@ -21,7 +19,7 @@ const signup = async (req, res) => {
         .string()
         .min(6, { message: "Password should be 6 char long" }),
     });
-    const validateData = userSchema.safeParse(req.body);
+    const validateData = adminSchema.safeParse(req.body);
     if (validateData.success) {
       return res.json({
         errors: validateData.error.issues.map((err) => err.message),
@@ -29,20 +27,20 @@ const signup = async (req, res) => {
     }
     const salt = 10;
     const hashedPassword = await bcrypt.hash(password, salt);
-    const existingUser = await userModel.findOne({ email: email });
-    if (existingUser) {
-      return res.json({ errors: "User already exists" });
+    const existingAdmin = await adminModel.findOne({ email: email });
+    if (existingAdmin) {
+      return res.json({ errors: "Admin already exists" });
     }
-    const newUser = new userModel({
+    const newAdmin = new adminModel({
       firstName,
       lastName,
       email,
       password: hashedPassword,
     });
-    await newUser.save();
+    await newAdmin.save();
     res.json({ message: "Signup successfully" });
   } catch (error) {
-    console.log("Error in user signup ", error);
+    console.log("Error in admin signup ", error);
     res.json({ errors: "Internal server error" });
   }
 };
@@ -50,12 +48,12 @@ const signup = async (req, res) => {
 const login = async (req, res) => {
   const { email, password } = req.body;
   try {
-    const user = await userModel.findOne({ email: email });
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
-    if (!user || !isPasswordCorrect) {
+    const admin = await adminModel.findOne({ email: email });
+    const isPasswordCorrect = await bcrypt.compare(password, admin.password);
+    if (!admin || !isPasswordCorrect) {
       return res.json({ errors: "Invalid Credentials" });
     }
-    const token = jwt.sign({ id: user._id }, jwtUserPassword, {
+    const token = jwt.sign({ id: admin._id }, jwtAdminPassword, {
       expiresIn: "1d",
     });
     const cookieOption = {
@@ -72,32 +70,14 @@ const login = async (req, res) => {
   }
 };
 
-const purchasedCourses = async (req, res) => {
-  const userId = req.userId;
-  try {
-    const purchased = await purchaseModel.find({ userId });
-    let purchasedCourseId = [];
-    for (let i = 0; i < purchased.length; i++) {
-      purchasedCourseId.push(purchased[i].courseId);
-    }
-    const courseData = await courseModel.find({
-      _id: { $in: purchasedCourseId },
-    });
-    res.json({ purchased, courseData });
-  } catch (error) {
-    console.log("Error while purchasing course", error);
-    res.json({ errors: "Internal server error" });
-  }
-};
-
 const logout = async (req, res) => {
   try {
     res.clearCookie("jwt");
     res.json({ message: "Logout successfully" });
   } catch (error) {
-    console.log("Error in user logout", error);
+    console.log("Error in admin logout", error);
     res.json({ errors: "Internal server error" });
   }
 };
 
-module.exports = { signup, login, logout, purchasedCourses };
+module.exports = { signup, login, logout };

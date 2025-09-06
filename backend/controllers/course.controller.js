@@ -1,4 +1,5 @@
 const courseModel = require("../models/course.model");
+const purchaseModel = require("../models/purchase.model");
 const cloudinary = require("cloudinary").v2;
 
 const createCourse = async (req, res) => {
@@ -103,10 +104,32 @@ const courseDetail = async (req, res) => {
   }
 };
 
+const buyCourses = async(req,res)=>{
+  const userId = req.userId
+  const {courseId} = req.params
+  try {
+    const course = await courseModel.findById(courseId)
+    if(!course){
+      return res.json({errors:"Course not found"})
+    }
+    const existingPurchase = await purchaseModel.findOne({userId,courseId})
+    if(existingPurchase){
+      return res.json({errors:"Course already purchased"})
+    }
+    const newPurchase = new purchaseModel({userId,courseId})
+    await newPurchase.save();
+    res.json({message:"Course purchase successfully"})
+  } catch (error) {
+    console.log("Error in buying course",error)
+    res.json({errors:"Internal server error"})
+  }
+}
+
 module.exports = {
   createCourse,
   updateCourse,
   deleteCourse,
   getCourses,
   courseDetail,
+  buyCourses
 };
