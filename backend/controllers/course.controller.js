@@ -3,6 +3,7 @@ const purchaseModel = require("../models/purchase.model");
 const cloudinary = require("cloudinary").v2;
 
 const createCourse = async (req, res) => {
+  const adminId = req.adminId
   const { title, description, price } = req.body;
   const { image } = req.files;
   try {
@@ -38,6 +39,7 @@ const createCourse = async (req, res) => {
         public_id: cloud_response.public_id,
         url: cloud_response.url,
       },
+      creatorId:adminId
     };
     const course = await courseModel.create(courseData);
     res.json({ message: "Course created successfully", course });
@@ -48,17 +50,21 @@ const createCourse = async (req, res) => {
 };
 
 const updateCourse = async (req, res) => {
+  const adminId = req.adminId
   const { courseId } = req.params;
   const { title, description, price } = req.body;
   try {
-    const course = await courseModel.updateOne(
-      { _id: courseId },
+    const course = await courseModel.findByIdAndUpdate(
+      { _id: courseId, creatorId:adminId },
       {
         title,
         description,
         price,
       }
     );
+    if(!course){
+      return res.json({errors:"Course not found"})
+    }
     res.json({ message: "Course updated successfully", course });
   } catch (error) {
     console.log("Error in course updating ", error);
@@ -67,11 +73,12 @@ const updateCourse = async (req, res) => {
 };
 
 const deleteCourse = async (req, res) => {
+  const adminId = req.adminId
   const { courseId } = req.params;
   try {
-    const course = await courseModel.findByIdAndDelete({ _id: courseId });
+    const course = await courseModel.findByIdAndDelete({ _id: courseId,creatorId:adminId });
     if (!course) {
-      return res.status(404).json({ errors: "COurse not found" });
+      return res.status(404).json({ errors: "Course not found" });
     }
     res.json({ message: "Course deleted successfully" });
   } catch (error) {
